@@ -7,7 +7,7 @@
   "WillLuke.nextjs.addTypesOnSave": true,
   "WillLuke.nextjs.hasPrompted": true,
   "eslint.workingDirectories": [
-    { "pattern": "apps/*/" },
-    { "pattern": "packages/*/" }
+    { "pattern": "app/*/" },
+    { "pattern": "lib/*/" }
   ]
 }
