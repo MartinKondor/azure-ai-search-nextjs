@@ -1,7 +1,5 @@
+import Upload from './components/Upload';
+
 export default function Home() {
-  return (
-    <div>
-      <p>hello</p>
-    </div>
-  );
+  return <Upload />;
 }
