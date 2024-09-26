@@ -1,5 +1,5 @@
-import Upload from './components/Upload';
+import Search from './components/Search';
 
 export default function Home() {
-  return <Upload />;
+  return <Search />;
 }

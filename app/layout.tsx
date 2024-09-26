@@ -18,7 +18,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         {children}
-        <footer className="bg-secondary py-4 text-center text-sm text-muted-foreground">
+        <footer className="bg-secondary py-4 text-center text-sm text-muted-foreground bottom-0 w-full">
           <p>
             &copy; {new Date().getFullYear()} Made by{' '}
             <a
