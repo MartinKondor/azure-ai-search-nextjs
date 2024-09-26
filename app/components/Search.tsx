@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, ChangeEvent } from 'react';
 import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
 import { Toast } from '@/app/components/ui/toast';
@@ -11,52 +11,54 @@ import {
   CardDescription,
   CardContent,
 } from '@/app/components/ui/card';
-import { SearchResult } from '@/lib/types';
+
+interface SearchResult {
+  content: string;
+  score: number;
+}
+
+interface ToastState {
+  message: string;
+  type: 'success' | 'error';
+}
 
 export default function Search() {
   const [query, setQuery] = useState<string>('');
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [results, setResults] = useState<SearchResult[] | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string>('');
-  const [toast, setToast] = useState<{
-    message: string;
-    type: 'success' | 'error';
-  } | null>(null);
+  const [toast, setToast] = useState<ToastState | null>(null);
+  const [uploading, setUploading] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSearch = async () => {
-    if (!file) {
-      setToast({ message: 'Please upload a file first', type: 'error' });
-      return;
-    }
-
     setLoading(true);
     try {
       const response = await fetch('/api/search', {
         method: 'POST',
-        body: JSON.stringify({
-          query,
-          content: await file.text(),
-          filename: file.name,
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
       });
       const data = await response.json();
 
       if (response.ok) {
-        setResults(data.results || []);
+        setResults(data.searchResults);
         setToast({ message: 'Search completed successfully', type: 'success' });
       } else {
         throw new Error(data.error || 'An error occurred during search');
       }
     } catch (error) {
       console.error('Search error:', error);
+      setToast({ message: 'An error occurred during search', type: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
       if (selectedFile.type !== 'text/plain') {
@@ -74,12 +76,37 @@ export default function Search() {
 
       setFile(selectedFile);
       setFileName(selectedFile.name);
-      setToast({ message: 'File uploaded successfully', type: 'success' });
     }
   };
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleFileUpload = async () => {
+    if (!file) {
+      setToast({ message: 'Please select a file first', type: 'error' });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'PUT',
+        body: JSON.stringify({ content: await file.text() }),
+      });
+
+      if (response.ok) {
+        setToast({ message: 'File uploaded successfully', type: 'success' });
+      } else {
+        throw new Error('File upload failed');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      setToast({ message: 'File upload failed', type: 'error' });
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -89,7 +116,7 @@ export default function Search() {
           <CardHeader>
             <CardTitle>Azure AI Search Demo</CardTitle>
             <CardDescription>
-              Upload a .txt file (max 20,000 characters), then enter your search
+              Upload a .txt file (max 20,000 characters) or enter your search
               query
             </CardDescription>
           </CardHeader>
@@ -104,7 +131,13 @@ export default function Search() {
                   className="hidden"
                 />
                 <Button onClick={handleUploadClick} variant="outline">
-                  Upload File
+                  Select File
+                </Button>
+                <Button
+                  onClick={handleFileUpload}
+                  disabled={!file || uploading}
+                >
+                  {uploading ? 'Uploading...' : 'Upload File'}
                 </Button>
                 {fileName && (
                   <span className="text-sm text-muted-foreground">
@@ -118,9 +151,8 @@ export default function Search() {
                   placeholder="Enter search query..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  disabled={!file}
                 />
-                <Button onClick={handleSearch} disabled={loading || !file}>
+                <Button onClick={handleSearch} disabled={loading}>
                   {loading ? 'Searching...' : 'Search'}
                 </Button>
               </div>
@@ -128,19 +160,7 @@ export default function Search() {
           </CardContent>
           <CardContent>
             <div className="mt-4 space-y-4">
-              <p>{JSON.stringify(results)}</p>
-              <br />
-
-              {/*results &&
-                results.map((result, index) => (
-                  <Card key={index}>
-                    <CardContent className="pt-4">
-                      <pre className="whitespace-pre-wrap overflow-x-auto">
-                        {JSON.stringify(result, null, 2)}
-                      </pre>
-                    </CardContent>
-                  </Card>
-                ))*/}
+              <pre>{JSON.stringify(results, null, 2)}</pre>
             </div>
           </CardContent>
         </Card>
