@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint \"*.ts*\"",
+    "lint:fix": "eslint \"*.ts*\" --fix"
   },
   "dependencies": {
     "@azure/search-documents": "^12.1.0",
