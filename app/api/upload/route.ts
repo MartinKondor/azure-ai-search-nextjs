@@ -33,4 +33,6 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-export async function GET() {}
+export async function GET() {
+  return NextResponse.json({});
+}
